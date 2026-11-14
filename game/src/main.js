@@ -408,7 +408,7 @@ rebuildTargets();
 syncHud();
 syncCamera();
 if (shot) {
-  const ctx = { state, player, bots, weapons, hud, rounds, firePlayerShot, syncHud };
+  const ctx = { state, player, bots, weapons, hud, rounds, firePlayerShot, syncHud, scene, syncCamera, objective };
   stageShot(shot, ctx);
   syncCamera();
   paintTwiceThenReady();
