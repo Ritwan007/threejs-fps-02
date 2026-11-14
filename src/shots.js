@@ -123,15 +123,47 @@ export function stageShot(name, ctx) {
     pushFeed(S, 'You planted the charge at Site A');
     pushFeed(S, 'Cinder dropped Slag');
   } else if (name === 'end') {
+    // Round end: the charge has just detonated on Site A — banner, score
+    // 4-2, kill feed, the player looking at the site they blew. Every value
+    // is set directly here: shot mode never runs a sim step, so nothing may
+    // depend on rounds.step / objective.step progression. (The first v2 end
+    // staging called hud.showOverlay with a mode string the real HUD does
+    // not know — its COPY lookup threw, stageShot died before syncHud, and
+    // main.js's boot block never reached the renderer: boot-value HUD over
+    // a black, never-drawn canvas.)
     S.phase = 'roundEnd';
-    S.phaseTime = 4;
-    S.round = 4;
-    S.emberScore = 3;
+    S.phaseTime = CONFIG.match.roundEndSeconds;
+    S.roundReason = 'CHARGE DETONATED — EMBER WINS THE ROUND';
+    S.emberScore = 4;
     S.ashScore = 2;
-    S.lastRoundWinner = 'ember';
-    S.lastRoundReason = 'Ash team eliminated';
-    hud.showBanner('EMBER WINS THE ROUND', 'Ash team eliminated — match point next', 6000);
-    hud.showOverlay('Ember takes the round', 'Score 3–2. Next round starts automatically — or press Enter.', 'Start next round');
+    S.round = 7;
+    weapons.switchTo('longarm');
+    // The charge is spent: no carrier, nothing left to plant or defuse, so
+    // syncHud leaves the bomb line empty.
+    S.player.carrying = false;
+    S.bomb.carrier = null;
+    S.bomb.site = 'A';
+    S.bomb.x = -15.5;
+    S.bomb.z = -10;
+    S.bomb.fuse = 0;
+    // Sync the charge visual while it is still flagged planted, so the
+    // device sits at the detonation point in frame; the flag is cleared
+    // before syncHud so the timer reads the round-end clock (0:04), not
+    // the spent fuse. In shot mode nothing re-syncs the visual afterwards.
+    S.bomb.planted = true;
+    ctx.objective.syncVisual(player.body);
+    S.bomb.planted = false;
+    // Stand off the site and look at it: kiln mouths, the site decal and
+    // the furnace light fill the frame behind the banner.
+    player.body.position.set(-9, 0, -3);
+    player.body.yaw = faceYaw(-9, -3, S.bomb.x, S.bomb.z);
+    player.body.pitch = 0;
+    ctx.syncCamera();
+    ctx.scene.updateMatrixWorld(true);
+    pushFeed(S, 'You planted the charge at Site A');
+    pushFeed(S, 'Flint dropped Pumice');
+    pushFeed(S, 'Kiln dropped Mortar');
+    hud.showBanner(S.roundReason);
   } else {
     return false;
   }
